@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mark's Portfolio World</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: 'Courier New', monospace; overflow: hidden; }
+  
+  #game-wrapper { position: relative; }
+  
+  canvas { 
+    display: block; 
+    image-rendering: pixelated; 
+    image-rendering: crisp-edges;
+    border: 4px solid #f5c518;
+    box-shadow: 0 0 40px rgba(245,197,24,0.4), 0 0 80px rgba(245,197,24,0.2);
+  }
+  
+  #hud { 
+    position: absolute; top: 8px; left: 8px; right: 8px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    pointer-events: none;
+  }
+  
+  #name-tag {
+    background: rgba(0,0,0,0.85);
+    border: 2px solid #f5c518;
+    color: #f5c518;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  
+  #controls-hint {
+    background: rgba(0,0,0,0.85);
+    border: 2px solid #555;
+    color: #aaa;
+    padding: 6px 10px;
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    line-height: 1.6;
+    text-align: right;
+  }
+
+  #dialog-box {
+    display: none;
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(10, 10, 30, 0.97);
+    border-top: 3px solid #f5c518;
+    padding: 0;
+    z-index: 100;
+  }
+
+  #case-study-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 200;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+  }
+
+  .modal-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 30px 20px;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--brand-color, #f5c518);
+  }
+
+  .modal-brand-badge {
+    width: 60px; height: 60px;
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+    border: 2px solid var(--brand-color, #f5c518);
+  }
+
+  .modal-title h2 {
+    color: var(--brand-color, #f5c518);
+    font-size: 20px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .modal-title p {
+    color: #888;
+    font-size: 11px;
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  .modal-video {
+    width: 100%;
+    max-height: 400px;
+    background: #000;
+    border: 2px solid var(--brand-color, #f5c518);
+    margin-bottom: 24px;
+    display: block;
+  }
+
+  .modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .metric-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-left: 3px solid var(--brand-color, #f5c518);
+    padding: 14px;
+  }
+
+  .metric-value {
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--brand-color, #f5c518);
+    letter-spacing: 1px;
+  }
+
+  .metric-label {
+    font-size: 10px;
+    color: #888;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .modal-summary {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 16px;
+    color: #ccc;
+    font-size: 12px;
+    line-height: 1.8;
+    margin-bottom: 20px;
+  }
+
+  .modal-highlights {
+    margin-bottom: 24px;
+  }
+
+  .modal-highlights h3 {
+    color: var(--brand-color, #f5c518);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .highlight-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: #bbb;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  .highlight-item::before {
+    content: '▶';
+    color: var(--brand-color, #f5c518);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .close-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    border: 2px solid var(--brand-color, #f5c518);
+    color: var(--brand-color, #f5c518);
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .close-btn:hover {
+    background: var(--brand-color, #f5c518);
+    color: #000;
+  }
+
+  @media (max-width: 600px) {
+    .modal-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="game-wrapper">
+  <canvas id="gameCanvas" width="640" height="480"></canvas>
+  <div id="hud">
+    <div id="name-tag">⚡ MARK'S PORTFOLIO WORLD</div>
+    <div id="controls-hint">
+      WASD / ARROW KEYS — MOVE<br>
+      ENTER / SPACE — ENTER BUILDING<br>
+      ESC — CLOSE
+    </div>
+  </div>
+  <div id="dialog-box"></div>
+</div>
+
+<div id="case-study-modal">
+  <div class="modal-inner" id="modal-content"></div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// ─── TILE SYSTEM ───────────────────────────────────────────────────────────────
+const TILE = 32;
+const COLS = 20;
+const ROWS = 15;
+
+// Tile IDs
+const T = {
+  GRASS: 0,
+  PATH_H: 1,
+  PATH_V: 2,
+  PATH_CROSS: 3,
+  TREE: 4,
+  WATER: 5,
+  GRASS_DARK: 6,
+  FLOWER_R: 7,
+  FLOWER_Y: 8,
+  STONE: 9,
+  PATH_TL: 10,
+  PATH_TR: 11,
+  PATH_BL: 12,
+  PATH_BR: 13,
+};
+
+// ─── WORLD MAP ─────────────────────────────────────────────────────────────────
+// 15 rows x 20 cols
+const worldMap = [
+  //0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19
+  [ 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4], // 0
+  [ 4, 0, 0, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 4, 0, 0, 0, 0, 0, 4], // 1
+  [ 4, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4], // 2
+  [ 4, 0, 0, 6, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 5, 5, 0, 0, 4], // 3
+  [ 4, 0, 0, 0, 0, 4, 1, 1, 1, 3, 1, 1, 1, 4, 0, 5, 5, 0, 0, 4], // 4
+  [ 4, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 7, 0, 4], // 5
+  [ 4, 0, 6, 0, 0, 0, 0, 8, 0, 2, 0, 6, 0, 0, 0, 0, 0, 0, 0, 4], // 6
+  [ 4, 4, 1, 1, 1, 3, 1, 1, 1, 3, 1, 1, 1, 1, 3, 1, 1, 4, 4, 4], // 7
+  [ 4, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 4], // 8
+  [ 4, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 4], // 9
+  [ 4, 0, 7, 0, 0, 2, 0, 8, 0, 2, 0, 0, 0, 0, 2, 0, 0, 7, 0, 4], // 10
+  [ 4, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 6, 0, 2, 0, 0, 0, 0, 4], // 11
+  [ 4, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 4], // 12
+  [ 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4], // 13
+  [ 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4], // 14
+];
+
+const solidTiles = new Set([T.TREE]);
+
+// ─── BUILDINGS ─────────────────────────────────────────────────────────────────
+const buildings = [
+  {
+    id: 'chunky',
+    name: "CAMPBELL'S CHUNKY",
+    subtitle: 'Fortnite FuelUp Tournament',
+    tileX: 1, tileY: 1,
+    width: 3, height: 3,
+    doorX: 2, doorY: 3,
+    primaryColor: '#8B0000',
+    accentColor: '#C41E3A',
+    roofColor: '#6B0000',
+    windowColor: '#FFD700',
+    emoji: '🍲',
+    logo: 'CHUNKY',
+    video: 'https://drive.google.com/uc?export=download&id=1_SCxA95zgnHv686WTJFczI785iMziVSY',
+    metrics: [
+      { value: '585MM', label: 'Media Impressions' },
+      { value: '4.8K', label: 'Unique Players' },
+      { value: '5.4K', label: 'Total Activations' },
+      { value: '9', label: 'Star Streamers' },
+    ],
+    summary: "Just in time for the NFL Playoffs, Campbell's Chunky extended its gaming strategy with the football-themed Chunky FuelUp Tournament in Fortnite Creative. Gamers competed to be featured in the finale event hosted by Nickmercs for the chance to win NFL merch + 2023 NFL tickets.",
+    highlights: [
+      'Built the Chunky FuelUp Plaza + Portals to three Chunky Challenges including The Spicy Soup Sprint, The Protein Power Course, and The Hearty Hail Mary',
+      'Influencers & NFL Players including Blaustoise, NickMercs & Jonathan Taylor of the Indianapolis Colts jumped in for further amplification',
+      'Island Code: 4261-7980-7840',
+    ],
+  },
+  {
+    id: 'crocs-roblox',
+    name: 'CROCS × ROBLOX',
+    subtitle: 'Crocs Quest Experience',
+    tileX: 7, tileY: 1,
+    width: 3, height: 3,
+    doorX: 8, doorY: 3,
+    primaryColor: '#00A3E0',
+    accentColor: '#0077B6',
+    roofColor: '#005F8A',
+    windowColor: '#7FDBFF',
+    emoji: '👟',
+    logo: 'CROCS',
+    video: 'https://drive.google.com/uc?export=download&id=1iUX8bkgklcqA6mCPbYIHYJvSx8aY02Q4',
+    metrics: [
+      { value: '3.4M', label: 'Crocs Quest Visits' },
+      { value: '49+', label: 'Years of Playtime' },
+      { value: '646K', label: '"Crocs Quest" Mentions' },
+      { value: '6.6%', label: 'Day 1 Retention Rate' },
+    ],
+    summary: 'In 2025, Crocs Quest made a splash on Roblox with 8 captivating levels that generated 49+ years of meaningful playtime with the Crocs brand, all while users enjoy a fun, engaging experience.',
+    highlights: [
+      '8 captivating game levels with an 88% like ratio on Roblox',
+      'High Hattitude drove the largest spike since launch, indicating user preference for different in-game wearables',
+      'Jet Pack boosted average playtime; Crocs Quest lives as legacy experience in 2026',
+    ],
+  },
+  {
+    id: 'crocs-fortnite',
+    name: 'CROCS × FORTNITE',
+    subtitle: 'Intergalactic Creative Tour',
+    tileX: 13, tileY: 1,
+    width: 3, height: 3,
+    doorX: 14, doorY: 3,
+    primaryColor: '#B44FD4',
+    accentColor: '#8B2FC9',
+    roofColor: '#6A1FA8',
+    windowColor: '#E0AAFF',
+    emoji: '🎮',
+    logo: 'CROCS FN',
+    video: 'https://drive.google.com/uc?export=download&id=1UmgvMMSioiTv4uYi1EM8TMUpWgFCWk0G',
+    metrics: [
+      { value: '3.6M', label: 'Map Impressions' },
+      { value: '25 min', label: 'Avg Playtime' },
+      { value: '1.5M hrs', label: 'Aggregate Time Spent' },
+      { value: '115.6M', label: 'Branded Interactions' },
+    ],
+    summary: 'Crocs developed new gaming IP named Switchbbitz, leveraging the newest tech in Fortnite — the NPC Spawner. Switchbbitz served as the host of the Crocs Intergalactic Fortnite Creative Tour, integrated with popular Fortnite creators\' maps, enabling customization and enhanced gameplay.',
+    highlights: [
+      'Program designed to build hype as Crocs establishes a long-term partnership with Fortnite',
+      'Integrated with popular creator maps: Window Wars, Ship Wars, Heroes Go Goated, and more',
+      'Crocs Organic Social + Livestream with Ludwig + Epic\'s Picks drove massive amplification',
+    ],
+  },
+  {
+    id: 'dom',
+    name: 'DOM PÉRIGNON',
+    subtitle: '× Takashi Murakami Flower Studio',
+    tileX: 1, tileY: 8,
+    width: 3, height: 4,
+    doorX: 2, doorY: 11,
+    primaryColor: '#C9A84C',
+    accentColor: '#8B6914',
+    roofColor: '#6B4F0E',
+    windowColor: '#FFE87C',
+    emoji: '🍾',
+    logo: 'DOM P.',
+    video: 'https://drive.google.com/uc?export=download&id=1Rq2fnJj0O7driVlbTjNvq6rNUg4EG995',
+    metrics: [
+      { value: '64%', label: 'CRM Capture Rate' },
+      { value: 'MAX', label: 'Capacity Attendance' },
+      { value: '1st', label: 'Public Dom P. Exhibition' },
+      { value: '★★★', label: 'Press Reviews' },
+    ],
+    summary: 'PMCI activated the first-ever public exhibition by Dom Pérignon, leveraging connected media experiences to drive CRM through culture. The Murakami Flower Studio enchanted fans of the artist to collaborate, create, and join the Dom Pérignon community using PMCI\'s ExperienceOS Platform.',
+    highlights: [
+      'Custom AR UGC Mirror built by partner Geenee allowed guests to co-create official Murakami art videos with Blanc or Rosé filters',
+      '"The undeniable showstopper? The AR photo moment" — The Knocturnal',
+      'Maison executives described the experience as a benchmark for all future Dom Pérignon public activations',
+    ],
+  },
+  {
+    id: 'mcdo',
+    name: "McDONALD'S FRANCE",
+    subtitle: '× Ligue 1 Gaming Experience',
+    tileX: 7, tileY: 8,
+    width: 3, height: 4,
+    doorX: 8, doorY: 11,
+    primaryColor: '#DA291C',
+    accentColor: '#FFC72C',
+    roofColor: '#C41500',
+    windowColor: '#FFF5CC',
+    emoji: '🍟',
+    logo: "McDO",
+    video: 'https://drive.google.com/uc?export=download&id=1aOLf8IwK2ySvT1MNppAYXZNQp8eF75yJ',
+    metrics: [
+      { value: '1.2M', label: 'Unique Players' },
+      { value: '5.5M', label: 'Total Games Played' },
+      { value: '5×', label: 'Avg Games Per User' },
+      { value: 'Ligue 1', label: 'Sponsorship Activated' },
+    ],
+    summary: "McDonald's France transformed its Ligue 1 sponsorship into an always-on gaming experience inside the McDo+ app. By launching the McDo+ Game Center with flagship title FC McDonald's, the brand embedded play directly into its loyalty ecosystem — turning passive football fandom into repeat, skill-based participation.",
+    highlights: [
+      'Fans personalized avatars, represented Ligue 1 teams, and competed on leaderboards for gaming prizes',
+      'Earn & burn loyalty mechanics, score multipliers, and public leaderboards encouraged frequent return visits',
+      'Built on modular architecture designed for future local game launches, creating a repeatable playbook for global markets',
+    ],
+  },
+  {
+    id: 'oreo',
+    name: 'OREO',
+    subtitle: 'Digital IMC Campaign',
+    tileX: 13, tileY: 8,
+    width: 3, height: 4,
+    doorX: 14, doorY: 11,
+    primaryColor: '#1A1A5E',
+    accentColor: '#2828A0',
+    roofColor: '#0D0D3D',
+    windowColor: '#C8B8FF',
+    emoji: '🍪',
+    logo: 'OREO',
+    video: 'https://drive.google.com/uc?export=download&id=1GVg_ut3FfF1GCPU94SAFoZgJYno0QYNQ',
+    metrics: [
+      { value: '198K', label: 'Total Registrants' },
+      { value: '122K', label: 'Email Opt-Ins (56%)' },
+      { value: '1:46', label: 'Avg Time Spent (min)' },
+      { value: '2.88M', label: 'Overall Visits' },
+    ],
+    summary: 'The OREO digital experience exceeded ALL benchmarks across every metric. With 198K registrants (42% above goal), 122K email opt-ins (134% above benchmark), and 2.88M overall visits (+154% above Space Dunk), the campaign delivered the highest-performing OREO IMC since 2021.',
+    highlights: [
+      '1:46 mins average time spent (+30s above next highest OREO IMC), pointing to a highly engaging experience',
+      '122K consumers opted into OREO marketing emails — more than double the 52K benchmark and higher than any other campaign 2020–2024',
+      '573K total sweeps entries, +32% above Space Dunk (433K)',
+    ],
+  },
+];
+
+// ─── SPRITE DRAWING ────────────────────────────────────────────────────────────
+// Pokemon-style pixel art player (based on Mark's headshot: dark curly hair, blue blazer, black shirt, beard)
+function drawPlayer(x, y, frame, dir) {
+  const px = Math.floor(x);
+  const py = Math.floor(y);
+  const f = Math.floor(frame) % 4;
+  
+  ctx.save();
+  
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.beginPath();
+  ctx.ellipse(px + 8, py + 30, 8, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Legs / Feet
+  const legOffset = (f === 1 || f === 3) ? (f === 1 ? -2 : 2) : 0;
+  ctx.fillStyle = '#1a1a3e'; // dark pants
+  if (dir === 'down' || dir === 'up') {
+    ctx.fillRect(px + 4, py + 22, 4, 8);
+    ctx.fillRect(px + 9, py + 22, 4, 8);
+    // shoes
+    ctx.fillStyle = '#111';
+    ctx.fillRect(px + 3, py + 28, 5, 3);
+    ctx.fillRect(px + 9, py + 28, 5, 3);
+  } else {
+    ctx.fillRect(px + 5, py + 22, 7, 8);
+    ctx.fillStyle = '#111';
+    ctx.fillRect(px + (dir === 'right' ? 8 : 3), py + 28, 5, 3);
+  }
+  
+  // Body - Blue blazer
+  ctx.fillStyle = '#1e3a6e';
+  ctx.fillRect(px + 3, py + 13, 11, 10);
+  // Black shirt underneath
+  ctx.fillStyle = '#111';
+  ctx.fillRect(px + 6, py + 14, 5, 9);
+  // Blazer lapels
+  ctx.fillStyle = '#1e3a6e';
+  ctx.fillRect(px + 3, py + 13, 4, 8);
+  ctx.fillRect(px + 10, py + 13, 4, 8);
+  
+  // Arms
+  ctx.fillStyle = '#1e3a6e';
+  const armSwing = (f === 1 || f === 3) ? (f === 1 ? -2 : 2) : 0;
+  if (dir !== 'left' && dir !== 'right') {
+    ctx.fillRect(px + 1, py + 13 + (armSwing < 0 ? 0 : armSwing), 3, 7);
+    ctx.fillRect(px + 13, py + 13 + (armSwing > 0 ? 0 : -armSwing), 3, 7);
+  } else {
+    ctx.fillRect(px + (dir === 'right' ? 13 : 1), py + 14, 3, 7);
+  }
+
+  // Head - skin tone (Mark is mixed/brown)
+  ctx.fillStyle = '#C68642';
+  ctx.fillRect(px + 4, py + 4, 9, 9);
+  
+  // Curly dark hair
+  ctx.fillStyle = '#1a0a00';
+  ctx.fillRect(px + 3, py + 2, 11, 5); // top hair
+  ctx.fillRect(px + 2, py + 4, 3, 4);  // left side
+  ctx.fillRect(px + 12, py + 4, 3, 4); // right side
+  // hair bumps
+  ctx.fillRect(px + 4, py + 1, 3, 2);
+  ctx.fillRect(px + 8, py + 1, 3, 2);
+  ctx.fillRect(px + 11, py + 2, 2, 2);
+  
+  // Face details based on direction
+  if (dir === 'down' || dir === 'up') {
+    if (dir === 'down') {
+      // Eyes
+      ctx.fillStyle = '#3d1f00';
+      ctx.fillRect(px + 5, py + 9, 2, 2);
+      ctx.fillRect(px + 10, py + 9, 2, 2);
+      // Smile
+      ctx.fillStyle = '#a05030';
+      ctx.fillRect(px + 6, py + 12, 5, 1);
+      // Beard
+      ctx.fillStyle = '#2a1500';
+      ctx.fillRect(px + 5, py + 11, 7, 2);
+      ctx.fillRect(px + 5, py + 13, 2, 1);
+      ctx.fillRect(px + 10, py + 13, 2, 1);
+    } else {
+      // Back of head - just hair
+      ctx.fillStyle = '#1a0a00';
+      ctx.fillRect(px + 3, py + 4, 11, 9);
+    }
+  } else {
+    // Side view
+    ctx.fillStyle = '#3d1f00';
+    ctx.fillRect(px + (dir === 'right' ? 11 : 5), py + 9, 2, 2);
+    ctx.fillStyle = '#2a1500';
+    ctx.fillRect(px + 5, py + 11, 6, 2);
+  }
+  
+  ctx.restore();
+}
+
+// ─── BUILDING DRAWING ──────────────────────────────────────────────────────────
+function drawBuilding(b, camX, camY) {
+  const sx = b.tileX * TILE - camX;
+  const sy = b.tileY * TILE - camY;
+  const bw = b.width * TILE;
+  const bh = b.height * TILE;
+  
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.fillRect(sx + 4, sy + 4, bw, bh);
+  
+  // Foundation
+  ctx.fillStyle = '#8B7355';
+  ctx.fillRect(sx, sy + bh - 6, bw, 6);
+  
+  // Walls
+  ctx.fillStyle = b.primaryColor;
+  ctx.fillRect(sx, sy + 16, bw, bh - 22);
+  
+  // Roof (triangle-ish)
+  ctx.fillStyle = b.roofColor;
+  ctx.beginPath();
+  ctx.moveTo(sx - 4, sy + 20);
+  ctx.lineTo(sx + bw / 2, sy);
+  ctx.lineTo(sx + bw + 4, sy + 20);
+  ctx.lineTo(sx + bw + 4, sy + 26);
+  ctx.lineTo(sx - 4, sy + 26);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Roof accent stripe
+  ctx.fillStyle = b.accentColor;
+  ctx.fillRect(sx - 2, sy + 20, bw + 4, 4);
+  
+  // Windows
+  ctx.fillStyle = b.windowColor;
+  const winY = sy + 30;
+  ctx.fillRect(sx + 6, winY, 12, 10);
+  ctx.fillRect(sx + bw - 18, winY, 12, 10);
+  
+  // Window frames
+  ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(sx + 6, winY, 12, 10);
+  ctx.strokeRect(sx + bw - 18, winY, 12, 10);
+  
+  // Window panes
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillRect(sx + 6, winY, 6, 5);
+  ctx.fillRect(sx + bw - 18, winY, 6, 5);
+  
+  // Door
+  ctx.fillStyle = '#4a3000';
+  const doorW = 14, doorH = 20;
+  const dsx = sx + Math.floor(bw / 2) - Math.floor(doorW / 2);
+  const dsy = sy + bh - doorH - 6;
+  ctx.fillRect(dsx, dsy, doorW, doorH);
+  
+  // Door arch
+  ctx.fillStyle = '#3a2000';
+  ctx.beginPath();
+  ctx.arc(dsx + doorW/2, dsy + 2, 7, Math.PI, 0);
+  ctx.fill();
+  
+  // Door knob
+  ctx.fillStyle = b.accentColor;
+  ctx.beginPath();
+  ctx.arc(dsx + 10, dsy + doorH/2, 2, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Brand name label
+  ctx.fillStyle = 'rgba(0,0,0,0.75)';
+  ctx.fillRect(sx + 2, sy + bh - 54, bw - 4, 16);
+  ctx.fillStyle = b.accentColor;
+  ctx.font = `bold ${bw > 96 ? 7 : 6}px 'Courier New'`;
+  ctx.textAlign = 'center';
+  ctx.fillText(b.logo, sx + bw / 2, sy + bh - 42);
+  
+  // Emoji sign above door
+  ctx.font = '14px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(b.emoji, sx + bw / 2, sy + 16);
+  
+  // "Enter" prompt if near
+  if (playerNearBuilding === b.id) {
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    const pw = 90, ph = 16;
+    const px2 = sx + bw/2 - pw/2;
+    ctx.fillRect(px2, sy - 20, pw, ph);
+    ctx.fillStyle = '#f5c518';
+    ctx.font = 'bold 8px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText('[ ENTER ] to explore', sx + bw/2, sy - 8);
+  }
+}
+
+// ─── TILE DRAWING ──────────────────────────────────────────────────────────────
+const grassColors = ['#4a9c4a', '#52a852', '#3d8c3d', '#46924a'];
+const pathColor = '#c8b480';
+const pathDark = '#b09a60';
+
+function drawTile(tileId, px, py, tx, ty) {
+  switch (tileId) {
+    case T.GRASS:
+    case T.GRASS_DARK: {
+      const shade = ((tx + ty) % 4 === 0) ? grassColors[3] : 
+                    ((tx * 3 + ty) % 4 === 1) ? grassColors[1] : grassColors[0];
+      ctx.fillStyle = tileId === T.GRASS_DARK ? '#3d8040' : shade;
+      ctx.fillRect(px, py, TILE, TILE);
+      // Grass tufts
+      if ((tx + ty * 3) % 5 === 0) {
+        ctx.fillStyle = 'rgba(0,80,0,0.3)';
+        ctx.fillRect(px + 4, py + 20, 2, 6);
+        ctx.fillRect(px + 8, py + 18, 2, 8);
+        ctx.fillRect(px + 14, py + 22, 2, 5);
+        ctx.fillRect(px + 22, py + 16, 2, 7);
+      }
+      break;
+    }
+    case T.PATH_H:
+      ctx.fillStyle = pathColor;
+      ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = pathDark;
+      ctx.fillRect(px, py, TILE, 2);
+      ctx.fillRect(px, py + TILE - 2, TILE, 2);
+      break;
+    case T.PATH_V:
+      ctx.fillStyle = pathColor;
+      ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = pathDark;
+      ctx.fillRect(px, py, 2, TILE);
+      ctx.fillRect(px + TILE - 2, py, 2, TILE);
+      break;
+    case T.PATH_CROSS:
+      ctx.fillStyle = pathColor;
+      ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = pathDark;
+      ctx.fillRect(px, py, TILE, 2);
+      ctx.fillRect(px, py + TILE - 2, TILE, 2);
+      ctx.fillRect(px, py, 2, TILE);
+      ctx.fillRect(px + TILE - 2, py, 2, TILE);
+      break;
+    case T.TREE: {
+      ctx.fillStyle = '#52a852';
+      ctx.fillRect(px, py, TILE, TILE);
+      // Tree shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.fillRect(px + 6, py + 20, 18, 12);
+      // Trunk
+      ctx.fillStyle = '#8B5E3C';
+      ctx.fillRect(px + 12, py + 22, 8, 10);
+      // Canopy layers
+      ctx.fillStyle = '#228B22';
+      ctx.beginPath();
+      ctx.moveTo(px + 16, py + 2);
+      ctx.lineTo(px + 28, py + 18);
+      ctx.lineTo(px + 4, py + 18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#32CD32';
+      ctx.beginPath();
+      ctx.moveTo(px + 16, py + 6);
+      ctx.lineTo(px + 26, py + 20);
+      ctx.lineTo(px + 6, py + 20);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#3CB371';
+      ctx.beginPath();
+      ctx.moveTo(px + 16, py + 10);
+      ctx.lineTo(px + 24, py + 22);
+      ctx.lineTo(px + 8, py + 22);
+      ctx.closePath();
+      ctx.fill();
+      break;
+    }
+    case T.WATER: {
+      ctx.fillStyle = '#4499CC';
+      ctx.fillRect(px, py, TILE, TILE);
+      // Ripple effect
+      const t = Date.now() / 1200;
+      ctx.fillStyle = 'rgba(150,220,255,0.4)';
+      ctx.fillRect(px + 4, py + 6 + Math.sin(t + tx) * 2, 10, 2);
+      ctx.fillRect(px + 18, py + 14 + Math.sin(t + ty) * 2, 8, 2);
+      ctx.fillRect(px + 8, py + 22 + Math.sin(t) * 2, 14, 2);
+      // Rocks/lily pads
+      if ((tx + ty) % 2 === 0) {
+        ctx.fillStyle = '#6BBF99';
+        ctx.beginPath();
+        ctx.ellipse(px + 20, py + 12, 5, 3, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      break;
+    }
+    case T.FLOWER_R:
+      ctx.fillStyle = '#4a9c4a';
+      ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = '#228B22';
+      ctx.fillRect(px + 14, py + 18, 2, 12);
+      ctx.fillStyle = '#FF3366';
+      ctx.beginPath();
+      ctx.arc(px + 15, py + 16, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      ctx.arc(px + 15, py + 16, 2, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    case T.FLOWER_Y:
+      ctx.fillStyle = '#4a9c4a';
+      ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = '#228B22';
+      ctx.fillRect(px + 14, py + 18, 2, 12);
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      ctx.arc(px + 15, py + 16, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#FF6600';
+      ctx.beginPath();
+      ctx.arc(px + 15, py + 16, 2, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    default:
+      ctx.fillStyle = '#4a9c4a';
+      ctx.fillRect(px, py, TILE, TILE);
+  }
+}
+
+// ─── GAME STATE ─────────────────────────────────────────────────────────────────
+let player = {
+  x: 9 * TILE + 8,
+  y: 7 * TILE - 4,
+  speed: 2.5,
+  dir: 'down',
+  frame: 0,
+  moving: false,
+  frameTimer: 0,
+};
+
+let camera = { x: 0, y: 0 };
+let playerNearBuilding = null;
+let keys = {};
+let animFrame = 0;
+
+// ─── COLLISION ──────────────────────────────────────────────────────────────────
+function isSolid(worldX, worldY) {
+  const tx = Math.floor(worldX / TILE);
+  const ty = Math.floor(worldY / TILE);
+  if (tx < 0 || ty < 0 || tx >= COLS || ty >= ROWS) return true;
+  if (solidTiles.has(worldMap[ty][tx])) return true;
+  // Building collision
+  for (const b of buildings) {
+    if (tx >= b.tileX && tx < b.tileX + b.width &&
+        ty >= b.tileY && ty < b.tileY + b.height) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function checkCollision(x, y) {
+  const margin = 6;
+  return (
+    isSolid(x + margin, y + margin) ||
+    isSolid(x + TILE - margin, y + margin) ||
+    isSolid(x + margin, y + TILE - margin) ||
+    isSolid(x + TILE - margin, y + TILE - margin)
+  );
+}
+
+// ─── NEAR BUILDING CHECK ────────────────────────────────────────────────────────
+function checkNearBuilding() {
+  const px = player.x / TILE;
+  const py = player.y / TILE;
+  playerNearBuilding = null;
+  for (const b of buildings) {
+    if (px >= b.tileX - 0.5 && px <= b.tileX + b.width + 0.5 &&
+        py >= b.tileY - 0.5 && py <= b.tileY + b.height + 0.5) {
+      playerNearBuilding = b.id;
+      break;
+    }
+  }
+}
+
+// ─── OPEN CASE STUDY ───────────────────────────────────────────────────────────
+function openCaseStudy(brandId) {
+  const b = buildings.find(x => x.id === brandId);
+  if (!b) return;
+  
+  const modal = document.getElementById('case-study-modal');
+  const content = document.getElementById('modal-content');
+  
+  // Determine video type
+  const isQuicktime = b.video.endsWith('.mov');
+  
+  content.innerHTML = `
+    <style>
+      :root { --brand-color: ${b.accentColor}; }
+    </style>
+    <div class="modal-header">
+      <div class="modal-brand-badge" style="background: ${b.primaryColor}20; border-color: ${b.accentColor}">
+        <span>${b.emoji}</span>
+      </div>
+      <div class="modal-title">
+        <h2 style="color: ${b.accentColor}">${b.name}</h2>
+        <p>${b.subtitle}</p>
+      </div>
+    </div>
+    
+    <video class="modal-video" controls autoplay muted loop style="border-color: ${b.accentColor}">
+      <source src="${b.video}" type="${isQuicktime ? 'video/mp4' : 'video/mp4'}">
+      Your browser does not support this video format.
+    </video>
+    
+    <div class="modal-summary">${b.summary}</div>
+    
+    <div class="modal-grid">
+      ${b.metrics.map(m => `
+        <div class="metric-card" style="border-left-color: ${b.accentColor}">
+          <div class="metric-value" style="color: ${b.accentColor}">${m.value}</div>
+          <div class="metric-label">${m.label}</div>
+        </div>
+      `).join('')}
+    </div>
+    
+    <div class="modal-highlights">
+      <h3 style="color: ${b.accentColor}">Campaign Highlights</h3>
+      ${b.highlights.map(h => `<div class="highlight-item">${h}</div>`).join('')}
+    </div>
+    
+    <button class="close-btn" style="border-color: ${b.accentColor}; color: ${b.accentColor}" onclick="closeCaseStudy()">
+      ← RETURN TO PORTFOLIO WORLD
+    </button>
+  `;
+  
+  modal.style.display = 'block';
+  document.body.style.overflow = 'auto';
+}
+
+function closeCaseStudy() {
+  const modal = document.getElementById('case-study-modal');
+  modal.style.display = 'none';
+  document.body.style.overflow = 'hidden';
+  // Stop video
+  const video = modal.querySelector('video');
+  if (video) { video.pause(); video.currentTime = 0; }
+}
+
+// ─── INPUT ──────────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  
+  if ((e.code === 'Enter' || e.code === 'Space') && playerNearBuilding) {
+    openCaseStudy(playerNearBuilding);
+    e.preventDefault();
+  }
+  if (e.code === 'Escape') {
+    closeCaseStudy();
+  }
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) {
+    e.preventDefault();
+  }
+});
+document.addEventListener('keyup', e => { keys[e.code] = false; });
+
+// ─── GAME LOOP ──────────────────────────────────────────────────────────────────
+let lastTime = 0;
+
+function update(dt) {
+  let dx = 0, dy = 0;
+  if (keys['ArrowLeft']  || keys['KeyA']) { dx = -1; player.dir = 'left'; }
+  if (keys['ArrowRight'] || keys['KeyD']) { dx =  1; player.dir = 'right'; }
+  if (keys['ArrowUp']    || keys['KeyW']) { dy = -1; player.dir = 'up'; }
+  if (keys['ArrowDown']  || keys['KeyS']) { dy =  1; player.dir = 'down'; }
+  
+  // Normalize diagonal
+  if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
+  
+  const spd = player.speed;
+  const nx = player.x + dx * spd;
+  const ny = player.y + dy * spd;
+  
+  player.moving = (dx !== 0 || dy !== 0);
+  
+  if (!checkCollision(nx, player.y)) player.x = nx;
+  if (!checkCollision(player.x, ny)) player.y = ny;
+  
+  // Animate walk
+  if (player.moving) {
+    player.frameTimer += dt;
+    if (player.frameTimer > 180) {
+      player.frame = (player.frame + 1) % 4;
+      player.frameTimer = 0;
+    }
+  } else {
+    player.frame = 0;
+  }
+  
+  // Camera follow
+  const targetCamX = player.x + 8 - canvas.width / 2;
+  const targetCamY = player.y + 8 - canvas.height / 2;
+  const maxCamX = COLS * TILE - canvas.width;
+  const maxCamY = ROWS * TILE - canvas.height;
+  camera.x = Math.max(0, Math.min(maxCamX, targetCamX));
+  camera.y = Math.max(0, Math.min(maxCamY, targetCamY));
+  
+  checkNearBuilding();
+  
+  animFrame++;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Draw tiles
+  const startCol = Math.floor(camera.x / TILE);
+  const startRow = Math.floor(camera.y / TILE);
+  const endCol = Math.min(COLS - 1, startCol + Math.ceil(canvas.width / TILE) + 1);
+  const endRow = Math.min(ROWS - 1, startRow + Math.ceil(canvas.height / TILE) + 1);
+  
+  for (let row = startRow; row <= endRow; row++) {
+    for (let col = startCol; col <= endCol; col++) {
+      const px = col * TILE - Math.floor(camera.x);
+      const py = row * TILE - Math.floor(camera.y);
+      drawTile(worldMap[row][col], px, py, col, row);
+    }
+  }
+  
+  // Draw buildings (behind player if y < player)
+  const sortedBuildings = [...buildings].sort((a, b) => a.tileY - b.tileY);
+  for (const b of sortedBuildings) {
+    drawBuilding(b, Math.floor(camera.x), Math.floor(camera.y));
+  }
+  
+  // Draw player
+  const psx = Math.floor(player.x - camera.x);
+  const psy = Math.floor(player.y - camera.y);
+  drawPlayer(psx, psy, player.frame, player.dir);
+  
+  // Draw water animation overlay
+  // (already handled in tile draw)
+  
+  // Vignette
+  const grad = ctx.createRadialGradient(
+    canvas.width/2, canvas.height/2, canvas.width * 0.25,
+    canvas.width/2, canvas.height/2, canvas.width * 0.75
+  );
+  grad.addColorStop(0, 'rgba(0,0,0,0)');
+  grad.addColorStop(1, 'rgba(0,0,0,0.4)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function gameLoop(timestamp) {
+  const dt = timestamp - lastTime;
+  lastTime = timestamp;
+  update(dt);
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+// ─── MOBILE CONTROLS ───────────────────────────────────────────────────────────
+// Add touch d-pad
+const dpad = document.createElement('div');
+dpad.style.cssText = `
+  position: absolute; bottom: 16px; left: 16px;
+  display: grid; grid-template-columns: 40px 40px 40px;
+  grid-template-rows: 40px 40px 40px; gap: 4px;
+  z-index: 50;
+`;
+dpad.innerHTML = `
+  <div></div>
+  <button id="btn-up" style="background:#f5c518;border:2px solid #000;border-radius:4px;font-size:18px;cursor:pointer;touch-action:none">▲</button>
+  <div></div>
+  <button id="btn-left" style="background:#f5c518;border:2px solid #000;border-radius:4px;font-size:18px;cursor:pointer;touch-action:none">◀</button>
+  <button id="btn-enter" style="background:#e55;border:2px solid #000;border-radius:4px;font-size:11px;color:#fff;font-weight:bold;cursor:pointer;touch-action:none;line-height:1">OK</button>
+  <button id="btn-right" style="background:#f5c518;border:2px solid #000;border-radius:4px;font-size:18px;cursor:pointer;touch-action:none">▶</button>
+  <div></div>
+  <button id="btn-down" style="background:#f5c518;border:2px solid #000;border-radius:4px;font-size:18px;cursor:pointer;touch-action:none">▼</button>
+  <div></div>
+`;
+document.getElementById('game-wrapper').appendChild(dpad);
+
+const btnMap = {
+  'btn-up': 'ArrowUp',
+  'btn-down': 'ArrowDown',
+  'btn-left': 'ArrowLeft',
+  'btn-right': 'ArrowRight',
+};
+
+for (const [id, code] of Object.entries(btnMap)) {
+  const btn = document.getElementById(id);
+  btn.addEventListener('touchstart', e => { e.preventDefault(); keys[code] = true; });
+  btn.addEventListener('touchend', e => { e.preventDefault(); keys[code] = false; });
+  btn.addEventListener('mousedown', () => keys[code] = true);
+  btn.addEventListener('mouseup', () => keys[code] = false);
+}
+
+document.getElementById('btn-enter').addEventListener('click', () => {
+  if (playerNearBuilding) openCaseStudy(playerNearBuilding);
+});
+
+// ─── BOOT ───────────────────────────────────────────────────────────────────────
+// Center player on the main cross path
+player.x = 9 * TILE;
+player.y = 7 * TILE - 10;
+camera.x = 9 * TILE - canvas.width / 2;
+camera.y = 7 * TILE - canvas.height / 2;
+
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
